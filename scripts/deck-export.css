@@ -1,0 +1,17 @@
+/*
+ * Stylesheet entry point for the standalone deck export.
+ *
+ * Pulls the same tokens the application uses (src/app/theme.css) and scans only
+ * the presentation sources, so the exported HTML looks identical to
+ * /presentation without carrying the rest of the app's CSS.
+ *
+ * The deck shell (.deck-root, .deck-slide, print rules) is NOT defined here:
+ * Tailwind tree-shakes component-layer classes it cannot see used in scanned
+ * content, which silently dropped the print rules. The shell ships inline in
+ * the exported HTML instead, where nothing can remove it.
+ */
+@import "tailwindcss";
+@import "../src/app/theme.css";
+
+@source "../src/app/presentation/**/*.tsx";
+@source "../src/lib/utils.ts";

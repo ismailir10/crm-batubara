@@ -1,0 +1,153 @@
+/*
+ * Design tokens, base layer, utilities and print rules.
+ *
+ * Split out of globals.css so the standalone deck export
+ * (scripts/deck-export.css) can pull in exactly the same tokens. One source of
+ * truth — otherwise the exported HTML slowly drifts from the app.
+ */
+
+/*
+  Design language: Stripe Dashboard (decision D-017).
+
+  Light blue-grey canvas, white surfaces lifted by layered low-opacity shadows
+  rather than heavy borders, indigo brand accent, deep navy-ink text, pill
+  status badges, tabular figures. Dense but calm — the reference is a financial
+  console, not a marketing page.
+*/
+@theme {
+  /* Neutrals — Stripe's ink ramp, blue-leaning greys */
+  --color-ink-25: oklch(0.988 0.003 250);
+  --color-ink-50: oklch(0.978 0.005 250); /* #F6F9FC canvas */
+  --color-ink-100: oklch(0.957 0.006 252);
+  --color-ink-200: oklch(0.913 0.008 255); /* #E3E8EE hairline */
+  --color-ink-300: oklch(0.845 0.013 256); /* #C1C9D2 */
+  --color-ink-400: oklch(0.678 0.024 264); /* #8792A2 */
+  --color-ink-500: oklch(0.572 0.027 267); /* #697386 muted text */
+  --color-ink-600: oklch(0.468 0.031 271);
+  --color-ink-700: oklch(0.398 0.032 273); /* #3C4257 body */
+  --color-ink-800: oklch(0.318 0.034 274);
+  --color-ink-900: oklch(0.262 0.034 275); /* #1A1F36 headings */
+  --color-ink-950: oklch(0.208 0.036 268);
+
+  /* Brand — Stripe blurple */
+  --color-brand-50: oklch(0.968 0.016 283);
+  --color-brand-100: oklch(0.932 0.036 283);
+  --color-brand-200: oklch(0.868 0.072 282);
+  --color-brand-300: oklch(0.772 0.124 281);
+  --color-brand-400: oklch(0.672 0.182 279);
+  --color-brand-500: oklch(0.585 0.229 278); /* #635BFF */
+  --color-brand-600: oklch(0.528 0.232 278);
+  --color-brand-700: oklch(0.468 0.212 277);
+  --color-brand-800: oklch(0.392 0.172 276);
+  --color-brand-900: oklch(0.298 0.118 273);
+
+  /* Deep navy used for the marketing-grade surfaces in the deck */
+  --color-deep-700: oklch(0.318 0.062 253);
+  --color-deep-800: oklch(0.262 0.056 252);
+  --color-deep-900: oklch(0.212 0.048 252); /* #0A2540 */
+  --color-deep-950: oklch(0.168 0.040 252);
+
+  /* Semantic — status meaning only, never decoration */
+  --color-success-soft: oklch(0.952 0.038 162);
+  --color-success: oklch(0.588 0.132 162); /* #1FA971 */
+  --color-success-ink: oklch(0.432 0.104 164); /* #0E6245 */
+
+  --color-warning-soft: oklch(0.962 0.048 82);
+  --color-warning: oklch(0.672 0.138 62);
+  --color-warning-ink: oklch(0.492 0.126 56); /* #BB5504 */
+
+  --color-danger-soft: oklch(0.958 0.026 12);
+  --color-danger: oklch(0.582 0.186 10); /* #CD3D64 */
+  --color-danger-ink: oklch(0.452 0.172 6); /* #A41C4E */
+
+  --color-info-soft: oklch(0.958 0.026 262);
+  --color-info: oklch(0.548 0.148 262);
+  --color-info-ink: oklch(0.418 0.132 264);
+
+  /* Coal-price accent, reserved for index context */
+  --color-accent-soft: oklch(0.962 0.036 78);
+  --color-accent: oklch(0.688 0.142 66);
+
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Stripe's layered elevation: several near-transparent shadows, not one dark one */
+  --shadow-card:
+    0 0 0 1px rgb(10 37 64 / 0.04), 0 1px 1px rgb(10 37 64 / 0.03),
+    0 3px 6px rgb(10 37 64 / 0.02);
+  --shadow-raised:
+    0 0 0 1px rgb(10 37 64 / 0.05), 0 2px 5px rgb(10 37 64 / 0.06),
+    0 8px 16px rgb(10 37 64 / 0.04);
+  --shadow-button: 0 1px 1px rgb(10 37 64 / 0.06), 0 0 0 1px rgb(10 37 64 / 0.06);
+  --shadow-brand: 0 1px 1px rgb(10 37 64 / 0.08), 0 2px 5px rgb(99 91 255 / 0.24);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-ink-50);
+    color: var(--color-ink-700);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink-900);
+    letter-spacing: -0.011em;
+  }
+
+  /* Figures must line up column-wise. Non-negotiable for scanning. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 1px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  /* Stripe's small uppercase column label */
+  .label-caps {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+  }
+}
+
+/* Presentation deck: 16:9 slides, print to one slide per page. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-slide {
+    display: flex !important;
+    page-break-after: always;
+    break-after: page;
+    width: 100%;
+    height: 100vh;
+  }
+
+  /* Without this the final slide's page break emits a trailing blank page. */
+  .print-slide:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+}
