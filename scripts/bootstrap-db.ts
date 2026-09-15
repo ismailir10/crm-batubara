@@ -27,9 +27,30 @@ const appPassword = decodeURIComponent(appUrl.password);
 const maintenanceUrl = new URL(ADMIN_URL);
 maintenanceUrl.pathname = "/postgres";
 
+/**
+ * Hosted providers (Neon, Supabase, RDS) give you a database that already
+ * exists, often with no `postgres` maintenance database to connect to, and no
+ * permission to CREATE DATABASE. In that case connect straight to the target
+ * database and only ensure the application role.
+ */
+const REMOTE = process.env.REMOTE_DB === "yes" || !isLocalHost(ADMIN_URL);
+
+function isLocalHost(url: string) {
+  const host = new URL(url).hostname;
+  return host === "localhost" || host === "127.0.0.1";
+}
+
 async function main() {
-  const client = new Client({ connectionString: maintenanceUrl.toString() });
+  const client = new Client({
+    connectionString: REMOTE ? ADMIN_URL : maintenanceUrl.toString(),
+    ssl: REMOTE ? { rejectUnauthorized: false } : undefined,
+  });
   await client.connect();
+
+  if (REMOTE) {
+    console.log(`remote database detected (${new URL(ADMIN_URL!).hostname})`);
+    console.log("skipping CREATE DATABASE — the provider already made it");
+  }
 
   const role = await client.query("select 1 from pg_roles where rolname = $1", [appRole]);
   if (role.rowCount === 0) {
@@ -46,19 +67,43 @@ async function main() {
     console.log(`role ${appRole}: already exists, password synchronised`);
   }
 
-  const db = await client.query("select 1 from pg_database where datname = $1", [dbName]);
-  if (db.rowCount === 0) {
-    await client.query(`create database ${quoteIdent(dbName)}`);
-    console.log(`database ${dbName}: created`);
-  } else {
-    console.log(`database ${dbName}: already exists, left untouched`);
+  if (!REMOTE) {
+    const db = await client.query("select 1 from pg_database where datname = $1", [dbName]);
+    if (db.rowCount === 0) {
+      await client.query(`create database ${quoteIdent(dbName)}`);
+      console.log(`database ${dbName}: created`);
+    } else {
+      console.log(`database ${dbName}: already exists, left untouched`);
+    }
+    await client.end();
   }
 
-  await client.end();
+  const dbClient = REMOTE
+    ? client
+    : new Client({ connectionString: ADMIN_URL });
+  if (!REMOTE) await dbClient.connect();
 
-  const dbClient = new Client({ connectionString: ADMIN_URL });
-  await dbClient.connect();
-  await dbClient.query(`grant connect on database ${quoteIdent(dbName)} to ${quoteIdent(appRole)}`);
+  await dbClient.query(
+    `grant connect on database ${quoteIdent(dbName)} to ${quoteIdent(appRole)}`
+  );
+
+  // The app role must be able to read the schema it will be granted objects in.
+  await dbClient.query(`grant usage on schema public to ${quoteIdent(appRole)}`);
+
+  // Guard the property the whole access-control design rests on: a role that
+  // owns the tables, or is a superuser, silently bypasses row level security.
+  const check = await dbClient.query<{ rolsuper: boolean; rolbypassrls: boolean }>(
+    "select rolsuper, rolbypassrls from pg_roles where rolname = $1",
+    [appRole]
+  );
+  const row = check.rows[0];
+  if (row?.rolsuper || row?.rolbypassrls) {
+    throw new Error(
+      `Role ${appRole} has superuser or BYPASSRLS. RLS would not be enforced — refusing to continue.`
+    );
+  }
+  console.log(`role ${appRole}: verified non-superuser, RLS will apply`);
+
   await dbClient.end();
 
   console.log("bootstrap complete");
