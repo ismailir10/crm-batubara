@@ -8,7 +8,11 @@ const nextConfig: NextConfig = {
 
   // Emits a self-contained server bundle, which is what an internal/on-premise
   // deployment would run. Portability is not readiness — see specification §16.
-  output: "standalone",
+  //
+  // Not on Vercel: Vercel's own builder produces its serverless output, and a
+  // standalone build only confuses it. Keeping this unconditional is what left
+  // the first deployments serving 404 on every route.
+  output: process.env.VERCEL ? undefined : "standalone",
 };
 
 export default nextConfig;
