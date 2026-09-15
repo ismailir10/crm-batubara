@@ -9,35 +9,38 @@ Current state of the demo deployment, and the steps left to finish it.
 | GitHub | [`ismailir10/crm-batubara`](https://github.com/ismailir10/crm-batubara) — **public** |
 | Vercel project | `crm-batubara`, linked to the repo, auto-deploys on push to `main` |
 | Build | Passing. All 17 routes compile; `/presentation` is static |
-| Working URL | `https://crm-batubara-ismails-projects-196d40d3.vercel.app` |
+| Live URL | **https://crm-batubara.vercel.app** |
+| Deployment protection | Disabled — publicly reachable |
 | Database | **Not provisioned** |
 
-### `crm-batubara.vercel.app` does not serve this project
+`/presentation` is fully working. The application pages render but cannot sign
+in until a database is configured.
 
-The deployment metadata lists it as an alias with `aliasError: null`, but the
-hostname returns `NOT_FOUND` from Vercel's edge while all three project-scoped
-aliases return normally. `*.vercel.app` short names are globally unique; this one
-is not bound here. Use the project-scoped URL above, or attach a real domain.
+### Resolved: every route returned 404
+
+Vercel did not detect the framework — both the project and the deployment
+reported `"framework": null`. It ran a generic build, which executed
+`next build` successfully and then deployed no routable output, so every path
+returned `NOT_FOUND`. Deployment protection masked this as a 302 redirect to
+Vercel SSO; disabling protection exposed the 404 underneath.
+
+Fixed by `vercel.json` (`"framework": "nextjs"`) plus dropping the standalone
+build on Vercel in `next.config.ts`. During diagnosis this looked like
+`crm-batubara.vercel.app` not being bound to the project — that reading was
+wrong. The alias was always correct; the deployment had nothing to serve.
 
 ## Remaining steps
 
-These need Vercel dashboard access. The MCP connection used during setup is
-read-only for project settings — attempting to change them returns
-`403 forbidden`.
+Only the database remains. Note that the API connection used during setup is
+read-only for Vercel project settings — changing them returns `403 forbidden` —
+so environment variables must be set in the dashboard.
 
-### 1. Turn off Vercel Authentication
+> Deployment protection is already disabled. The deployment serves only
+> synthetic data, but note that the login page prints the demo credentials and
+> the repository is public — anyone with the link can sign in and browse once a
+> database exists. That is a deliberate choice for this demo, not an oversight.
 
-Project → Settings → Deployment Protection → **Vercel Authentication: Disabled**.
-
-Until this is off, every `*.vercel.app` URL 302-redirects to Vercel SSO and
-nobody outside the account can open the demo.
-
-> The deployment serves only synthetic data, but note the login page prints the
-> demo credentials and the repository is public. Anyone with the link will be
-> able to sign in and browse. That is acceptable for this demo; it is a
-> deliberate choice, not an oversight.
-
-### 2. Provision Postgres
+### 1. Provision Postgres
 
 Any Postgres 16+ works. There is **no Supabase client library in this codebase** —
 data access is `pg` behind a repository layer (decision D-013), so the provider
@@ -50,7 +53,7 @@ is a connection string and nothing more.
 > `crm_app` role and now refuses to continue if that role has `SUPERUSER` or
 > `BYPASSRLS`.
 
-### 3. Run migrations and seed
+### 2. Run migrations and seed
 
 With the provider's owner connection string in `ADMIN_DATABASE_URL` and the
 application role in `DATABASE_URL`:
@@ -64,7 +67,7 @@ npm run db:seed                      # deterministic synthetic data
 `db:bootstrap` detects a non-local host automatically and skips `CREATE DATABASE`,
 since hosted providers create the database for you and rarely grant that right.
 
-### 4. Set Vercel environment variables
+### 3. Set Vercel environment variables
 
 Project → Settings → Environment Variables, for **Production**:
 

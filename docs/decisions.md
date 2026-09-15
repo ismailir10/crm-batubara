@@ -182,6 +182,30 @@ reversible, not yet confirmed) · **Superseded by D-NNN**.
   strongest credibility signal available for the money.
 - **Reversal cost:** Low for all.
 
+### D-022 — Vercel deployment defects, and a corrected diagnosis
+- **Date:** 2026-09-15
+- **Status:** Confirmed (record of fixes)
+- **Defects found after deploying:**
+  1. **Build failed — `EBADPLATFORM`.** `@rolldown/binding-darwin-arm64`, pinned locally to
+     work around an npm optional-dependency bug in vitest, was a hard devDependency and is
+     macOS/arm64 only. Vercel builds on linux/x64. Moved to `optionalDependencies`, which npm
+     skips on a mismatched platform instead of failing.
+  2. **Every route returned 404 while the build passed.** Vercel did not detect the framework
+     (`"framework": null` on both project and deployment), ran a generic build that executed
+     `next build` successfully, then deployed no routable output. Fixed with `vercel.json`
+     (`"framework": "nextjs"`) and by not requesting a standalone build on Vercel —
+     `output: process.env.VERCEL ? undefined : "standalone"`. Standalone exists for the
+     on-premise story; Vercel produces its own serverless output and the two do not mix.
+- **Corrected diagnosis:** while deployment protection was enabled, the protected hosts
+  returned 302 and `crm-batubara.vercel.app` returned 404, which was read as the short domain
+  not being bound to the project. That was wrong. The alias was always correct; the
+  deployment simply had nothing to serve, and the SSO redirect masked the same 404 on the
+  other hosts. Recorded because the wrong reading was stated confidently before the
+  protection toggle made the real cause visible.
+- **Why it matters:** a green build log is not evidence that a deployment works. Both defects
+  passed every local check.
+- **Reversal cost:** N/A — corrections.
+
 ### D-021 — Deck published to rightjet/hq as a standalone export
 - **Date:** 2026-09-14
 - **Status:** Confirmed (direct instruction from the project owner)

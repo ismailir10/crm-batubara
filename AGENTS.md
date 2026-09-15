@@ -3,6 +3,47 @@
 Working agreement for any agent or human contributing to this repository.
 Tool-agnostic. Read this before doing anything else.
 
+---
+
+## 0. Where the project stands
+
+Phases 1–4 are complete and verified. Phase 5 (ship) is partly done.
+
+| | State |
+|---|---|
+| Specification | Approved, kept in step with the code — `docs/specification.md` |
+| Prototype | Built. Eight modules, full commercial flow, Coal Price Intelligence |
+| Deck | 18 slides at `/presentation`, built from real product screenshots |
+| Tests | 110 unit/integration (Vitest) + 23 end-to-end (Playwright) |
+| GitHub | [`ismailir10/crm-batubara`](https://github.com/ismailir10/crm-batubara) — **public**, auto-deploys `main` |
+| Live | **https://crm-batubara.vercel.app** — deck fully working |
+| Database | **Not provisioned.** App pages render but cannot sign in |
+
+**The one open task:** provision a Postgres database, run migrations and seed,
+set three Vercel environment variables. Steps and the reasoning are in
+`docs/deployment.md`. Everything else is done.
+
+Before changing anything, run `npm run verify` (lint → typecheck → test → build)
+to confirm the baseline is green.
+
+### The five things most likely to trip you up
+
+1. **The app must connect as a non-owner, non-superuser role.** Owners and
+   superusers bypass row level security, which silently disables the
+   approval-authority enforcement the demo is built around. `npm run db:bootstrap`
+   creates `crm_app` and refuses to continue if it has `SUPERUSER`/`BYPASSRLS`.
+2. **Never interpolate missing price data.** Weekends, holidays and failed
+   fetches stay as gaps. An invented price point would destroy trust in the one
+   module that differentiates this product.
+3. **The deck is generated, not hand-edited.** `npm run deck:capture` then
+   `npm run deck:export`. Editing `dist/deck/index.html` is wasted work.
+4. **Every external system is a mock.** Coal price APIs, SAP, MariaDB, the PHP
+   CRM, the daily email. Say so plainly; never imply a connection exists.
+5. **Figures quoted in the deck come from the seeded database.** If you change
+   the seed, re-check the numbers on slides 3, 12 and 13.
+
+---
+
 ## 1. Project objective
 
 Build a **CRM prototype for an Indonesian coal business** (H. Isam / Johnlin Group context),
@@ -23,13 +64,20 @@ This is a **prototype for demonstration**, not a production system.
 Ordered. Higher wins on conflict.
 
 1. Direct instructions from the project owner in the current conversation.
-2. `docs/decisions.md` — confirmed answers, decisions, and assumptions.
+2. `docs/decisions.md` — confirmed answers, decisions, and assumptions. **Read this
+   first when picking the project up.** D-001 to D-021, each with the reasoning and
+   the cost of reversing it. It is the fastest way to understand why the code looks
+   the way it does.
 3. `docs/specification.md` — the approved product specification.
-4. Minutes of Meeting: *"Minutes of Meeting (MoM) PT Johnlin Group (batubara)"*, 10 Sep 2026
+4. `docs/deployment.md` — deployment state and remaining steps.
+5. Minutes of Meeting: *"Minutes of Meeting (MoM) PT Johnlin Group (batubara)"*, 10 Sep 2026
    (Google Doc `17UAtuhZuCxWz_FMPYqJZks7TFthNVeeFZdfVhTwsF_s`) — the discovery record.
-5. This file.
+6. This file.
 
 Nothing else is a requirement. Not a guess, not a plausible inference, not an industry norm.
+
+A decision that is already recorded does not need re-litigating. If you believe one
+is wrong, say why and propose superseding it — do not quietly do something else.
 
 ## 3. Clarify before executing
 
